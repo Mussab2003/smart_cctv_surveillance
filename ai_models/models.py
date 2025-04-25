@@ -18,4 +18,24 @@ class User(AbstractBaseUser):
     USERNAME_FIELD = 'email'
     objects = UserManager()
 
+class Vehicle(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vehicles')
+    name = models.CharField(max_length=100)
+    registration_number = models.CharField(max_length=50, blank=True, null=True)
+    reference_image = models.URLField(null=True)
+
+class DetectionEvent(models.Model):
+    EVENT_TYPES = [
+        ('CAR_MOVEMENT', 'Car Movement'),
+        ('ENVIRONMENTAL_HAZARD', 'Fire or Smoke'),
+        ('UNAUTHORIZED_ACCESS', 'Unauthorized Access')
+    ]
+
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='events')
+    event_type = models.CharField(max_length=30, choices=EVENT_TYPES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    video_frame = models.URLField(null=True)
+    description = models.TextField(blank=True, null=True)
+    is_alert_sent = models.BooleanField(default=False)
+
      
