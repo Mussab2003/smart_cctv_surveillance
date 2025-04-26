@@ -23,7 +23,9 @@ class Vehicle(models.Model):
     name = models.CharField(max_length=100)
     registration_number = models.CharField(max_length=50, blank=True, null=True)
     reference_image = models.URLField(null=True)
-
+    vehicle_location_x = models.FloatField(null=True, blank=True)
+    vehicle_location_y = models.FloatField(null=True, blank=True)
+    
 class DetectionEvent(models.Model):
     EVENT_TYPES = [
         ('CAR_MOVEMENT', 'Car Movement'),
@@ -38,4 +40,20 @@ class DetectionEvent(models.Model):
     description = models.TextField(blank=True, null=True)
     is_alert_sent = models.BooleanField(default=False)
 
-     
+class Video(models.Model):
+    VIDEO_TYPE_CHOICES = [
+        ('upload', 'Uploaded Video'),
+        ('stream', 'Live Stream'),
+    ]
+
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='videos')
+    video_type = models.CharField(max_length=10, choices=VIDEO_TYPE_CHOICES)
+    video_url = models.URLField()
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    is_processed = models.BooleanField(default=False)
+    processing_result = models.JSONField(null=True, blank=True)  # optional: detection/tracking results
+
+    def __str__(self):
+        return f"{self.video_type} by {self.owner} at {self.uploaded_at}"
+    
+    
