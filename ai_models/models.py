@@ -20,11 +20,19 @@ class User(AbstractBaseUser):
 
 class Vehicle(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vehicles')
-    name = models.CharField(max_length=100)
+    vehicle_name = models.CharField(max_length=100)
     registration_number = models.CharField(max_length=50, blank=True, null=True)
     reference_image = models.URLField(null=True)
     vehicle_location_x = models.FloatField(null=True, blank=True)
     vehicle_location_y = models.FloatField(null=True, blank=True)
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['owner', 'vehicle_name'], name='unique_vehicle_name_per_owner')
+        ]
+    
+    def __str__(self):
+        return f"{self.vehicle_name} - {self.owner.username}"
     
 class DetectionEvent(models.Model):
     EVENT_TYPES = [
