@@ -5,43 +5,53 @@ from ai_models.utils.supabase_upload import uploadFileToSupabase, getSupabaseFil
 
 from rest_framework import status
 from rest_framework.response import Response
+import cv2
+import numpy as np
+from io import BytesIO
+
 
 EVENT_SAVE_COOLDOWN = timedelta(minutes=5)  # 5 min cooldown
 
+def get_image_extension_and_data(frame, format='jpeg'):
+    # Encode the frame as an image (in the specified format)
+    if format == 'jpeg':
+        _, img_encoded = cv2.imencode('.jpg', frame)
+    elif format == 'png':
+        _, img_encoded = cv2.imencode('.png', frame)
+    else:
+        raise ValueError("Unsupported format. Use 'jpeg' or 'png'.")
+
+    # Create a byte stream to hold the encoded image data
+    img_bytes = BytesIO(img_encoded.tobytes())
+    
+    # Return the image data and extension
+    return img_bytes, format
+
+# Example usage in your `save_detection_event` function
 def save_detection_event(vehicle, owner, event_type, description="", video_frame=None):
-    now = timezone.now()
+    # Get the image data (NumPy array) and extension
+    # img_bytes, file_ext = get_image_extension_and_data(video_frame, format='jpeg')
 
-    # Check for a recent similar event
-    recent_event = DetectionEvent.objects.filter(
-        vehicle=vehicle,
-        event_type=event_type,
-        timestamp__gte=now - EVENT_SAVE_COOLDOWN
-    ).first()
+    # Construct the file name
+    # file_name = f"vehicle_{vehicle.id}_{event_type}"
 
-    if recent_event:
-        # Recent similar event exists, do not save again
-        print(f"Skipping event save: recent {event_type} already exists.")
-        return
+    # try:
+    #     # Upload to Supabase (assuming uploadFileToSupabase expects bytes)
+    #     response = uploadFileToSupabase('detection_images', 'image', file_name, file_ext, img_bytes)
+    #     print(response)
+    # except Exception as upload_error:
+    #     print("Upload failed:", upload_error)
+    #     raise upload_error  # Let the view handle the error response
 
-    # No recent event, create new DetectionEvent
-    
-    file_name = f"owner_{owner.id}_{event_type}"
-    file_ext = video_frame.name.split('.')[-1]
-    
-    try:
-        response = uploadFileToSupabase('reference_images', 'image', file_name, file_ext, video_frame.read())
-        print(response)
-    except Exception as upload_error:
-        print("Upload failed:", upload_error)
-        return Response({'error': str(upload_error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-    file_path = getSupabaseFilePath(file_name, 'reference_images')
-    print(file_path)
-    
+    # # After uploading, get the file path from Supabase
+    # file_path = getSupabaseFilePath(file_name, 'detection_images')
+    # print(file_path)
+
+    # Create and save the DetectionEvent
     DetectionEvent.objects.create(
         vehicle=vehicle,
         event_type=event_type,
         description=description,
-        video_frame=file_path,
+        owner=owner
     )
-    print(f"Saved new {event_type} event for vehicle {vehicle.id}.")
+    print(f"Saved new {event_type}")

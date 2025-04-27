@@ -73,7 +73,7 @@ class FireSmokeDetectionSSE(APIView):
 
 
             response = StreamingHttpResponse(
-                self.event_stream(video_path=video_path),
+                self.event_stream(video_path=video_path, owner=user),
                 content_type='text/event-stream'
             )
             response['Cache-Control'] = 'no-cache'
@@ -82,13 +82,13 @@ class FireSmokeDetectionSSE(APIView):
         except Exception as e:
             return StreamingHttpResponse(self.event_stream(error=str(e)), content_type='text/event-stream')
 
-    def event_stream(self, video_path, error=None):
+    def event_stream(self, video_path, error=None, owner=None):
         if error:
             yield f"event: error\ndata: {error}\n\n"
             return
 
         try:
-            for event in detect_fire_smoke(video_path):
+            for event in detect_fire_smoke(video_path, owner):
                 if event["event"] == "fire_detected":
                     yield f"event: Fire Detected\ndata: {event['message']}\n\n"
                 if event["event"] == "smoke_detected":
@@ -110,7 +110,7 @@ class AuthorizedPersonDetectionSSE(APIView):
             video_path = video.video_url
 
             response = StreamingHttpResponse(
-                self.event_stream(video_path=video_path),
+                self.event_stream(video_path=video_path, owner=user),
                 content_type='text/event-stream'
             )
             response['Cache-Control'] = 'no-cache'
@@ -119,13 +119,13 @@ class AuthorizedPersonDetectionSSE(APIView):
         except Exception as e:
             return StreamingHttpResponse(self.event_stream(error=str(e)), content_type='text/event-stream')
 
-    def event_stream(self, video_path, error=None):
+    def event_stream(self, video_path, error=None, owner=None):
         if error:
             yield f"event: error\ndata: {error}\n\n"
             return
 
         try:
-            for event in run_recognition(video_path):
+            for event in run_recognition(video_path, owner):
                 if event["event"] == "authorized":
                     yield f"event: Authorized person detected \ndata: {event['message']}\n\n"
                 elif event["event"] == "unauthorized":

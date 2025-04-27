@@ -2,11 +2,11 @@
 
 import cv2
 from ai_models.ai.fire_smoke_detection.model import FireSmokeDetector  # assuming you saved the class here
-
+from ai_models.utils.save_detection_event import save_detection_event
 # Initialize once
 fire_smoke_detector = FireSmokeDetector(confidence=0.5)
 
-def detect_fire_smoke(video_path):
+def detect_fire_smoke(video_path, owner):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
             raise ValueError("Error: Unable to open video or stream.")
@@ -60,8 +60,9 @@ def detect_fire_smoke(video_path):
         # Send event if detected
         if fire_detected:
             yield {"event": "fire_detected", "message": "Fire detected!"}
-        elif smoke_detected:
+            save_detection_event(vehicle=None, owner=owner, event_type="ENVIRONMENTAL_HAZARD", description="A fire has occoured", video_frame=frame)
+        if smoke_detected:
             yield {"event": "smoke_detected", "message": "Smoke detected!"}
-
+            save_detection_event(vehicle=None, owner=owner, event_type="ENVIRONMENTAL_HAZARD", description="Smoke has occoured", video_frame=frame)
     cap.release()
     cv2.destroyAllWindows()

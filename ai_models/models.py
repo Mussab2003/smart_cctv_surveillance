@@ -44,7 +44,7 @@ class DetectionEvent(models.Model):
     ]
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='events')
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='events')
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='events', null=True)
     event_type = models.CharField(max_length=30, choices=EVENT_TYPES)
     timestamp = models.DateTimeField(auto_now_add=True)
     video_frame = models.URLField(null=True)

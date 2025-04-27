@@ -1,8 +1,9 @@
 import cv2
 import torch
 from .model import FaceRecognitionSystem
+from ai_models.utils.save_detection_event import save_detection_event
 
-def run_recognition(video_path=None):
+def run_recognition(video_path=None, owner=None):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
@@ -29,9 +30,9 @@ def run_recognition(video_path=None):
 
         if authorized:
             yield {"event" : "authorized", "message": authorized}
-        
         if unauthorized:
             yield {"event" : "unauthorized", "message": unauthorized}
+            save_detection_event(vehicle=None, owner=owner, event_type="UNAUTHORIZED_ACCESS", description="An unauthorized person is detected", video_frame=frame)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
