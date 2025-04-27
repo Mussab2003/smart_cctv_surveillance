@@ -1,8 +1,8 @@
+import math
 import cv2
 from .model import YoloDetector, Tracker
 from .utils import find_closest_detection, calculate_movement
-import math
-
+from ai_models.utils.save_detection_event import save_detection_event
 detector = YoloDetector(confidence=0.5)
 tracker = Tracker()
 
@@ -89,7 +89,7 @@ def detect_and_select_vehicle(frame_buffer, vehicle_location_x, vehicle_location
 #                 prev_box = bbox
 #                 break  # Track only the selected vehicle
 
-def track_vehicle_realtime(cap, selected_tracking_id):
+def track_vehicle_realtime(cap, selected_tracking_id, vehicle, owner):
     prev_box = None
 
     while True:
@@ -121,7 +121,7 @@ def track_vehicle_realtime(cap, selected_tracking_id):
                     print("Movement is: ", movement)
                     if movement > 4:  # Movement threshold (pixels)
                         yield {"event": "vehicle_moved", "message": "Vehicle has moved significantly."}
-
+                        save_detection_event(vehicle=vehicle, owner=owner, event_type="CAR_MOVEMENT", description="Car moved from its position.", video_frame=frame)
                 # Update the previous box
                 prev_box = bbox
 

@@ -33,7 +33,7 @@ class VehicleTrackingSSEView(APIView):
             cap, selected_tracking_id, initial_box = initialize_tracking_with_buffer(video_path, vehicle_location_x, vehicle_location_y)
 
             response = StreamingHttpResponse(
-                self.event_stream(cap, selected_tracking_id),
+                self.event_stream(cap = cap, selected_tracking_id = selected_tracking_id, vehicle = vehicle, owner=user),
                 content_type='text/event-stream'
             )
             response['Cache-Control'] = 'no-cache'
@@ -42,13 +42,13 @@ class VehicleTrackingSSEView(APIView):
         except Exception as e:
             return StreamingHttpResponse(self.event_stream(error=str(e)), content_type='text/event-stream')
 
-    def event_stream(self, cap=None, selected_tracking_id=None, error=None):
+    def event_stream(self, cap=None, selected_tracking_id=None, error=None, vehicle = None, owner = None):
         if error:
             yield f"event: error\ndata: {error}\n\n"
             return
 
         try:
-            for event in track_vehicle_realtime(cap, selected_tracking_id):
+            for event in track_vehicle_realtime(cap, selected_tracking_id, vehicle, owner):
                 if event["event"] == "vehicle_moved":
                     yield f"event: vehicle_moved\ndata: {event['message']}\n\n"
         except GeneratorExit:

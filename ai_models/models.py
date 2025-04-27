@@ -43,6 +43,7 @@ class DetectionEvent(models.Model):
         ('UNAUTHORIZED_ACCESS', 'Unauthorized Access')
     ]
 
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='events')
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='events')
     event_type = models.CharField(max_length=30, choices=EVENT_TYPES)
     timestamp = models.DateTimeField(auto_now_add=True)
