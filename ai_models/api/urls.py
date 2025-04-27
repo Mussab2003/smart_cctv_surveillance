@@ -3,7 +3,7 @@ from django.urls import path
 from ai_models.views.view_user import LoginUser,RegisterUser, user
 from ai_models.views.view_video import VideoUploadView, VideoStreamView, FrameExtractView
 from ai_models.views.view_vehicle import VehicleView, VehicleLocationUpdateView
-from ai_models.views.view_ai import VehicleTrackingSSEView
+from ai_models.views.view_ai import VehicleTrackingSSEView, FireSmokeDetectionSSE
 
 urlpatterns = [
     # User URLS
@@ -21,5 +21,6 @@ urlpatterns = [
     path('vehicle/location/', VehicleLocationUpdateView.as_view()),
     
     # AI Models Views
-    path('ai/track/', VehicleTrackingSSEView.as_view())
+    path('ai/vehicle/track/', VehicleTrackingSSEView.as_view()),
+    path('ai/fire-smoke/detect', FireSmokeDetectionSSE.as_view())
 ]

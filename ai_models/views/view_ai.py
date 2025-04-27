@@ -4,7 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.http import StreamingHttpResponse
 from ai_models.models import Video, Vehicle
-from ai_models.ai.car_tracking.predict import track_vehicle_realtime, initialize_tracking_with_buffer, detect_and_select_vehicle
+from ai_models.ai.car_tracking.predict import track_vehicle_realtime, initialize_tracking_with_buffer
+from ai_models.ai.fire_smoke_detection.predict import detect_fire_smoke
 
 class VehicleTrackingSSEView(APIView):
     permission_classes = [IsAuthenticated]
@@ -54,3 +55,43 @@ class VehicleTrackingSSEView(APIView):
         finally:
             if cap:
                 cap.release()  # Important to close the video capture
+    
+    
+class FireSmokeDetectionSSE(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            video = Video.objects.filter(owner=user).last()
+
+            if not video:
+                return StreamingHttpResponse(self.event_stream(error="No video found."), content_type='text/event-stream')
+
+            video_path = video.video_url
+
+
+            response = StreamingHttpResponse(
+                self.event_stream(video_path=video_path),
+                content_type='text/event-stream'
+            )
+            response['Cache-Control'] = 'no-cache'
+            return response
+
+        except Exception as e:
+            return StreamingHttpResponse(self.event_stream(error=str(e)), content_type='text/event-stream')
+
+    def event_stream(self, video_path, error=None):
+        if error:
+            yield f"event: error\ndata: {error}\n\n"
+            return
+
+        try:
+            for event in detect_fire_smoke(video_path):
+                if event["event"] == "fire_detected":
+                    yield f"event: Fire Detected\ndata: {event['message']}\n\n"
+                if event["event"] == "smoke_detected":
+                    yield f"event: Smoke Detected\ndata: {event['message']}\n\n"
+        except GeneratorExit:
+            pass
+        
