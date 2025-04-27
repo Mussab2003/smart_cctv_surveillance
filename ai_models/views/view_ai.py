@@ -22,8 +22,9 @@ class VehicleTrackingSSEView(APIView):
 
             # vehicle_location_x = vehicle.vehicle_location_x * (1920 // 640)
             # vehicle_location_y = vehicle.vehicle_location_y * (1080 // 384) 
-            vehicle_location_x = vehicle.vehicle_location_x * (1920 // 640)
-            vehicle_location_y = vehicle.vehicle_location_y * (1080 // 384) 
+            vehicle_location_x = vehicle.vehicle_location_x
+            vehicle_location_y = vehicle.vehicle_location_y
+             
 
             if vehicle_location_x is None or vehicle_location_y is None:
                 return StreamingHttpResponse(self.event_stream(error="Missing coordinates."), content_type='text/event-stream')

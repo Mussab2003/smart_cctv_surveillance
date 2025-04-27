@@ -1,5 +1,3 @@
-# ai_models/ai/car_tracking/model.py
-
 from ultralytics import YOLO
 from deep_sort_realtime.deepsort_tracker import DeepSort
 
