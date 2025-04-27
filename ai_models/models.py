@@ -19,6 +19,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
 class Vehicle(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vehicles')
     vehicle_name = models.CharField(max_length=100)
     registration_number = models.CharField(max_length=50, blank=True, null=True)
@@ -35,6 +36,7 @@ class Vehicle(models.Model):
         return f"{self.vehicle_name} - {self.owner.username}"
     
 class DetectionEvent(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     EVENT_TYPES = [
         ('CAR_MOVEMENT', 'Car Movement'),
         ('ENVIRONMENTAL_HAZARD', 'Fire or Smoke'),
@@ -49,6 +51,7 @@ class DetectionEvent(models.Model):
     is_alert_sent = models.BooleanField(default=False)
 
 class Video(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     VIDEO_TYPE_CHOICES = [
         ('upload', 'Uploaded Video'),
         ('stream', 'Live Stream'),

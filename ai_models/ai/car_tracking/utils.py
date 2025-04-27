@@ -18,3 +18,16 @@ def find_closest_detection(detections, target_x, target_y):
             closest_detection = (bbox, class_num, conf)
 
     return closest_detection
+
+def calculate_movement(box1, box2):
+    """
+    Calculate movement distance between two bounding boxes.
+    """
+    x1_center = (box1[0] + box1[2]) / 2
+    y1_center = (box1[1] + box1[3]) / 2
+    x2_center = (box2[0] + box2[2]) / 2
+    y2_center = (box2[1] + box2[3]) / 2
+
+    distance = ((x2_center - x1_center) ** 2 + (y2_center - y1_center) ** 2) ** 0.5
+    return distance
+

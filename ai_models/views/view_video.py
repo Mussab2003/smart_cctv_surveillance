@@ -33,13 +33,13 @@ class VideoUploadView(APIView):
             file_ext = video_file.name.split('.')[-1]
             
             try:
-                response = uploadFileToSupabase(file_name, file_ext, video_file.read())
+                response = uploadFileToSupabase('videos', 'video', file_name, file_ext, video_file.read())
                 print(response)
             except Exception as upload_error:
                 print("Upload failed:", upload_error)
                 return Response({'error': str(upload_error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            file_path = getSupabaseFilePath(file_name, 'video')
+            file_path = getSupabaseFilePath(file_name, 'videos')
             print(file_path)
             # Saving Video Path to database
             print("saving file to db")

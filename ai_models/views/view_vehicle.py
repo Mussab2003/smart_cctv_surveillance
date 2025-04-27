@@ -2,9 +2,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from ai_models.serializers.serializer_vehicle import VehicleSerializer, VehicleLocationUpdateSerializer
 from ai_models.models import Vehicle
+from ai_models.utils.supabase_upload import uploadFileToSupabase, getSupabaseFilePath
 
 class VehicleView(APIView):
     permission_classes = [IsAuthenticated]
@@ -96,25 +98,51 @@ class VehicleView(APIView):
 
 class VehicleLocationUpdateView(APIView):
     permission_classes = [IsAuthenticated]
-
-    def put(self, request, vehicle_id):
+    parser_classes = (MultiPartParser, FormParser)
+    
+    def post(self, request):
         """Update vehicle location"""
         try:
             user = request.user
+            
+            serializer = VehicleLocationUpdateSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+            
+            vehicle_id = serializer.validated_data['vehicle_id']
+            image = serializer.validated_data['reference_image']
+            vehicle_location_x = serializer.validated_data['vehicle_location_x']
+            vehicle_location_y = serializer.validated_data['vehicle_location_y']
+            
             try:
                 vehicle = Vehicle.objects.get(id=vehicle_id, owner=user)
             except Vehicle.DoesNotExist:
                 return Response({"error": "Vehicle not found."}, status=status.HTTP_404_NOT_FOUND)
-
-            serializer = VehicleLocationUpdateSerializer(vehicle, data=request.data, partial=True)
-            if not serializer.is_valid():
-                return Response(serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-            serializer.save()
-
+            
+            #File Properties
+            file_name = f"vehicle_{vehicle_id}_{request.user.username}"
+            file_ext = image.name.split('.')[-1]
+            
+            try:
+                response = uploadFileToSupabase('reference_images', 'image', file_name, file_ext, image.read())
+                print(response)
+            except Exception as upload_error:
+                print("Upload failed:", upload_error)
+                return Response({'error': str(upload_error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            file_path = getSupabaseFilePath(file_name, 'reference_images')
+            print(file_path)
+            
+            vehicle = Vehicle.objects.filter(id = vehicle_id).update(reference_image = file_path, vehicle_location_x = vehicle_location_x, vehicle_location_y = vehicle_location_y)
+            
             return Response({
                 "message": "Vehicle location updated successfully.",
-                "vehicle": serializer.data
+                "vehicle_name": vehicle.vehicle_name,
+                "registeration_number": vehicle.registeration_number,
+                "vehicle_location_x" : vehicle.vehicle_location_x,
+                "vehicle_location_x" : vehicle.vehicle_location_y,
+                "reference_image" : vehicle.reference_image,
             }, status=status.HTTP_200_OK)
 
         except Exception as err:
