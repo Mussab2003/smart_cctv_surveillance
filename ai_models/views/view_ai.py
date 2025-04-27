@@ -6,6 +6,7 @@ from django.http import StreamingHttpResponse
 from ai_models.models import Video, Vehicle
 from ai_models.ai.car_tracking.predict import track_vehicle_realtime, initialize_tracking_with_buffer
 from ai_models.ai.fire_smoke_detection.predict import detect_fire_smoke
+from ai_models.ai.authorized_person_detection.predict import run_recognition
 
 class VehicleTrackingSSEView(APIView):
     permission_classes = [IsAuthenticated]
@@ -94,4 +95,42 @@ class FireSmokeDetectionSSE(APIView):
                     yield f"event: Smoke Detected\ndata: {event['message']}\n\n"
         except GeneratorExit:
             pass
+        
+class AuthorizedPersonDetectionSSE(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            video = Video.objects.filter(owner=user).last()
+
+            if not video:
+                return StreamingHttpResponse(self.event_stream(error="No video found."), content_type='text/event-stream')
+
+            video_path = video.video_url
+
+            response = StreamingHttpResponse(
+                self.event_stream(video_path=video_path),
+                content_type='text/event-stream'
+            )
+            response['Cache-Control'] = 'no-cache'
+            return response
+
+        except Exception as e:
+            return StreamingHttpResponse(self.event_stream(error=str(e)), content_type='text/event-stream')
+
+    def event_stream(self, video_path, error=None):
+        if error:
+            yield f"event: error\ndata: {error}\n\n"
+            return
+
+        try:
+            for event in run_recognition(video_path):
+                if event["event"] == "authorized":
+                    yield f"event: Authorized person detected \ndata: {event['message']}\n\n"
+                elif event["event"] == "unauthorized":
+                    yield f"event: Unknown person detected\ndata: {event['message']}\n\n"
+        except GeneratorExit:
+            pass
+
         
