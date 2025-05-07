@@ -11,6 +11,7 @@ def preprocess_face(face_crop, device):
     return face_crop
 
 def recognize_face(face_crop, facenet_model, all_embeddings, database, device):
+    face_crop = cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB)
     preprocessed_face = preprocess_face(face_crop, device)
     with torch.no_grad():
         embedding = facenet_model(preprocessed_face)
@@ -37,3 +38,22 @@ def is_face_big_enough(x1, y1, x2, y2, min_area=10000):
     height = y2 - y1
     area = width * height
     return area >= min_area
+def is_face_usable(x1, y1, x2, y2, frame, conf, conf_thresh=0.6, area_thresh=0.005, blur_thresh=50.0):
+    frame_h, frame_w = frame.shape[:2]
+    face_area = (x2 - x1) * (y2 - y1)
+    frame_area = frame_w * frame_h
+
+    if conf < conf_thresh:
+        return False
+    if (face_area / frame_area) < area_thresh:
+        return False
+
+    face_crop = frame[y1:y2, x1:x2]
+    if face_crop.size == 0:
+        return False
+    gray = cv2.cvtColor(face_crop, cv2.COLOR_BGR2GRAY)
+    lap_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+    if lap_var < blur_thresh:
+        return False
+
+    return True
