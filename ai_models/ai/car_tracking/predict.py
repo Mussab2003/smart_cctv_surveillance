@@ -64,78 +64,86 @@ def detect_and_select_vehicle(frame_buffer, vehicle_location_x, vehicle_location
 
     return None
 
-# def track_vehicle_realtime(cap, selected_tracking_id):
-#     prev_box = None
-
-#     while True:
-#         ret, frame = cap.read()
-#         if not ret:
-#             break  # End of video
-
-#         detections = detector.detect(frame)
-#         tracking_ids, boxes = tracker.track(detections, frame)
-
-#         for track_id, bbox in zip(tracking_ids, boxes):
-#             if track_id == selected_tracking_id:
-#                 print("Tracking Id is: ")
-#                 print(track_id)
-#                 print(bbox)
-#                 if prev_box is not None:
-#                     movement = calculate_movement(prev_box, bbox)
-#                     print("Movement is: ")
-#                     print(movement)
-#                     if movement > 15:  # Movement threshold (pixels)
-#                         yield {"event": "vehicle_moved", "message": "Vehicle has moved significantly."}
-#                 prev_box = bbox
-#                 break  # Track only the selected vehicle
-
 def track_vehicle_realtime(cap, selected_tracking_id, vehicle, owner):
     prev_box = None
+    frame_count = 0
+    skip_frames = 2  # Process every 3rd frame
+    show_frames = True  # Enable visualization for testing
+    
+    # Movement detection parameters
+    movement_history = []  # Store recent movements
+    history_size = 5  # Number of frames to consider
+    cumulative_threshold = 8  # Total movement threshold
+    frame_threshold = 2  # Minimum movement per frame to consider
+    last_alert_time = 0  # Track when we last sent an alert
+    alert_cooldown = 30  # Frames to wait before sending another alert
+    movement = 0  # Initialize movement
+    cumulative_movement = 0  # Initialize cumulative movement
 
     while True:
         ret, frame = cap.read()
         if not ret:
-            break  # End of video
+            break
+
+        frame_count += 1
+        if frame_count % skip_frames != 0:
+            continue  # Skip frames to improve performance
 
         # Detect objects in the current frame
         detections = detector.detect(frame)
         tracking_ids, boxes = tracker.track(detections, frame)
 
+        # Create a copy of the frame for visualization
+        display_frame = frame.copy()
+
         for track_id, bbox in zip(tracking_ids, boxes):
             if track_id == selected_tracking_id:
-                print("Tracking Id is: ", track_id)
-                print("Bounding box: ", bbox)
-
-                # Ensure the bbox values are integers
-                x1, y1, x2, y2 = map(int, bbox)
-
-                # Draw the tracking rectangle on the frame
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Green color rectangle
-
-                # Put the tracking ID text on the frame
-                cv2.putText(frame, f"ID: {track_id}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-                # If we have a previous bounding box, calculate the movement
                 if prev_box is not None:
                     movement = calculate_movement(prev_box, bbox)
-                    print("Movement is: ", movement)
-                    if movement > 4:  # Movement threshold (pixels)
+                    
+                    # Add movement to history
+                    movement_history.append(movement)
+                    if len(movement_history) > history_size:
+                        movement_history.pop(0)
+                    
+                    # Calculate cumulative movement
+                    cumulative_movement = sum(movement_history)
+                    
+                    # Check if we should alert
+                    should_alert = (
+                        cumulative_movement > cumulative_threshold and  # Total movement threshold
+                        movement > frame_threshold and  # Current frame movement threshold
+                        (frame_count - last_alert_time) > alert_cooldown  # Cooldown period
+                    )
+                    
+                    if should_alert:
                         yield {"event": "vehicle_moved", "message": "Vehicle has moved significantly."}
                         save_detection_event(vehicle=vehicle, owner=owner, event_type="CAR_MOVEMENT", description="Car moved from its position.", video_frame=frame)
-                # Update the previous box
+                        last_alert_time = frame_count
+                        movement_history.clear()  # Reset history after alert
+                
                 prev_box = bbox
 
-                # Rescale the frame to 640x640
-                frame_rescaled = cv2.resize(frame, (640, 640))
+                # Draw tracking visualization
+                x1, y1, x2, y2 = map(int, bbox)
+                cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(display_frame, f"ID: {track_id}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                
+                # Add movement information
+                if prev_box is not None:
+                    cv2.putText(display_frame, f"Current Movement: {movement:.2f}", (x1, y1 - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    cv2.putText(display_frame, f"Cumulative: {cumulative_movement:.2f}", (x1, y1 - 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                # Display the frame with the rectangle and tracking ID
-                cv2.imshow("Tracking Vehicle", frame_rescaled)
+        # Resize frame for display
+        display_frame = cv2.resize(display_frame, (640, 640))
+        
+        # Show the frame
+        cv2.imshow("Vehicle Tracking", display_frame)
+        
+        # Break loop on 'q' press
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-                # Wait for key press to continue (if you want to close the window with a key press)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break  # Press 'q' to exit the loop and stop the tracking
-
-    # Clean up when finished
     cap.release()
     cv2.destroyAllWindows()
 
