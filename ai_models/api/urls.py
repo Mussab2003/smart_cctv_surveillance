@@ -1,5 +1,5 @@
 from django.urls import path
-from ai_models.views.view_user import LoginUser,RegisterUser, user
+from ai_models.views.view_user import LoginUser,RegisterUser, user, GenerateFacialEmbedding
 from ai_models.views.view_video import VideoUploadView, VideoStreamView, FrameExtractView
 from ai_models.views.view_vehicle import VehicleView, VehicleLocationUpdateView
 from ai_models.views.view_ai import VehicleTrackingSSEView, FireSmokeDetectionSSE, AuthorizedPersonDetectionSSE, CombinedDetectionSSE
@@ -9,7 +9,8 @@ urlpatterns = [
     path('user/login/', LoginUser.as_view()),
     path('user/register/', RegisterUser.as_view()),
     path('user/details/', user),
-
+    path('user/generate-embedding/', GenerateFacialEmbedding.as_view()),
+    
     # Video URLS
     path('video/upload/', VideoUploadView.as_view()),
     path('video/stream/', VideoStreamView.as_view()),
