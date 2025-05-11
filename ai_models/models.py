@@ -18,6 +18,16 @@ class User(AbstractBaseUser):
     USERNAME_FIELD = 'email'
     objects = UserManager()
 
+class FacialEmbedding(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='embeddings')
+    embedding_vector = models.JSONField()  # Storing the 512D embedding as a JSON array of floats
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    def __str__(self):
+        return f"Embedding for {self.user.username} at {self.created_at}"
+
+
 class Vehicle(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vehicles')

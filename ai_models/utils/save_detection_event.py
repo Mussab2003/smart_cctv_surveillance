@@ -27,8 +27,18 @@ def get_image_extension_and_data(frame, format='jpeg'):
     # Return the image data and extension
     return img_bytes, format
 
-# Example usage in your `save_detection_event` function
 def save_detection_event(vehicle, owner, event_type, description="", video_frame=None):
+    # Check if a similar event was created recently
+    recent_event = DetectionEvent.objects.filter(
+        owner=owner,
+        event_type=event_type,
+        timestamp__gte=timezone.now() - EVENT_SAVE_COOLDOWN
+    ).first()
+
+    if recent_event:
+        print(f"Skipping {event_type} event - cooldown period active")
+        return
+
     # Get the image data (NumPy array) and extension
     # img_bytes, file_ext = get_image_extension_and_data(video_frame, format='jpeg')
 

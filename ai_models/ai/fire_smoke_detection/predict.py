@@ -4,7 +4,7 @@ import cv2
 from ai_models.ai.fire_smoke_detection.model import FireSmokeDetector  # assuming you saved the class here
 from ai_models.utils.save_detection_event import save_detection_event
 # Initialize once
-fire_smoke_detector = FireSmokeDetector(confidence=0.5)
+fire_smoke_detector = FireSmokeDetector(confidence=0.4)
 
 def detect_fire_smoke(video_path, owner):
     cap = cv2.VideoCapture(video_path)

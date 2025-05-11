@@ -5,12 +5,28 @@ import torch
 class YoloDetector:
     def __init__(self, confidence=0.5):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.model = YOLO("ai_models/ai/car_tracking/car_movement_tracking.pt")  # update the correct path
+        self.model = YOLO("ai_models/ai/car_tracking/car_movement_tracking.pt")
         self.classList = ['car', 'bike']
         self.confidence = confidence
 
+        if self.device == 'cuda':
+            print("CUDA Available:", torch.cuda.is_available())
+            print("GPU:", torch.cuda.get_device_name(0))
+            self.model.to("cuda")
+            # Enable half precision for faster inference
+            self.model.fuse()
+        else:
+            print("CUDA not available, using CPU.")
+
     def detect(self, image):
-        results = self.model.predict(image, conf=self.confidence, device=0 if self.device == 'cuda' else 'cpu')
+        # Use a smaller inference size for faster processing
+        results = self.model.predict(
+            image, 
+            conf=self.confidence, 
+            device=0 if self.device == 'cuda' else 'cpu',
+            verbose=False,  # Disable verbose output
+            imgsz=640  # Use a smaller image size for inference
+        )
         result = results[0]
         return self.make_detections(result)
 
