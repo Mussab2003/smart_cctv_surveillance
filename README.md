@@ -1,6 +1,6 @@
 # 🚓 Smart CCTV Surveillance System
 
-A Deep Learning–powered surveillance system to prevent **vehicle theft** and detect **fire/smoke hazards** in real-time using **YOLO**, **DeepSORT**, and **Face Recognition**.
+A Deep Learning–powered surveillance system to track **vehicle movement**, detect **authroized/unauthorized persons** and detect **fire/smoke hazards** in real-time using **YOLO**, **DeepSORT**, and **Inception ResNet**.
 
 ## 👥 Team Members
 
@@ -100,7 +100,6 @@ The Smart CCTV Surveillance System effectively combines object detection, facial
 - 🐍 Backend: Django, REST Framework
 - 🔐 Authentication: JWT
 - ⚡ Real-time: Server-Sent Events (SSE)
-- 🔬 Hardware: NVIDIA RTX 4050 GPU
 
 ---
 
